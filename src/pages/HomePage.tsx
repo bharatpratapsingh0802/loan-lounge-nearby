@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import Header from '@/components/Header';
@@ -10,6 +10,7 @@ import { lenders } from '@/data/lenders';
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const [selectedLoanType, setSelectedLoanType] = useState<string | null>(null);
 
   return (
     <>
@@ -32,7 +33,10 @@ const HomePage = () => {
 
       <div className="px-4 pb-20">
         <section className="mb-6">
-          <LoanTypeChips />
+          <LoanTypeChips 
+            selectedType={selectedLoanType}
+            onTypeSelect={setSelectedLoanType}
+          />
         </section>
 
         <section>
@@ -44,9 +48,11 @@ const HomePage = () => {
           </div>
           
           <div className="space-y-4">
-            {lenders.map(lender => (
-              <LenderCard key={lender.id} lender={lender} />
-            ))}
+            {lenders
+              .filter(lender => selectedLoanType === null || lender.loanTypes.includes(selectedLoanType))
+              .map(lender => (
+                <LenderCard key={lender.id} lender={lender} />
+              ))}
           </div>
         </section>
       </div>
