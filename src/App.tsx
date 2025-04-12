@@ -13,6 +13,9 @@ import EligibilityPage from "./pages/EligibilityPage";
 import OffersPage from "./pages/OffersPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
+import AdminPage from "./pages/AdminPage";
+import LenderProfilePage from "./pages/LenderProfilePage";
+import LenderDashboardPage from "./pages/LenderDashboardPage";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +32,10 @@ const App = () => (
             <Route path="/eligibility/:id?" element={<EligibilityPage />} />
             <Route path="/offers" element={<OffersPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin/lender-profile" element={<LenderProfilePage />} />
+            <Route path="/admin/lender-profile/edit/:id" element={<LenderProfilePage />} />
+            <Route path="/admin/dashboard" element={<LenderDashboardPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <BottomNavigation />

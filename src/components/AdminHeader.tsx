@@ -1,25 +1,29 @@
 
 import React from 'react';
-import { Search, MapPin, ChevronLeft } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, MapPin, ChevronLeft, LogIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
-interface HeaderProps {
+interface AdminHeaderProps {
   title?: string;
   showBack?: boolean;
   showSearch?: boolean;
+  showLogin?: boolean;
   className?: string;
   onBackClick?: () => void;
-  children?: React.ReactNode;
 }
 
-const Header: React.FC<HeaderProps> = ({ 
+const AdminHeader: React.FC<AdminHeaderProps> = ({ 
   title, 
   showBack = false, 
   showSearch = false,
+  showLogin = true,
   className,
-  onBackClick,
-  children
+  onBackClick
 }) => {
+  const navigate = useNavigate();
+  
   return (
     <header className={cn(
       "sticky top-0 z-10 bg-white shadow-sm px-4 py-3",
@@ -28,7 +32,7 @@ const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center gap-3">
         {showBack && (
           <button 
-            onClick={onBackClick} 
+            onClick={onBackClick || (() => navigate(-1))} 
             className="text-gray-700 hover:text-primary"
           >
             <ChevronLeft size={24} />
@@ -53,10 +57,23 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         )}
         
-        {children}
+        {showLogin && (
+          <Button 
+            asChild 
+            variant="outline" 
+            size="sm" 
+            className="ml-auto"
+            onClick={() => navigate('/admin')}
+          >
+            <Link to="/admin">
+              <LogIn className="mr-2 h-4 w-4" />
+              Login
+            </Link>
+          </Button>
+        )}
       </div>
     </header>
   );
 };
 
-export default Header;
+export default AdminHeader;
