@@ -1,8 +1,8 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogIn, ChevronRight, MapPin, Star, LayoutGrid } from 'lucide-react';
+import { LogIn, ChevronRight, MapPin, Star } from 'lucide-react';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import LoanTypeChips from '@/components/LoanTypeChips';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -20,7 +20,7 @@ const HomePage = () => {
   );
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <Header 
         showSearch 
         className="mb-4"
@@ -38,7 +38,7 @@ const HomePage = () => {
         </Button>
       </Header>
 
-      <div className="px-4 pb-20">
+      <div className="flex-1 px-4 pb-20">
         <section className="mb-6">
           <LoanTypeChips 
             selectedType={selectedLoanType}
@@ -147,9 +147,10 @@ const HomePage = () => {
           )}
         </section>
       </div>
-    </>
+      
+      <Footer />
+    </div>
   );
 };
 
 export default HomePage;
-

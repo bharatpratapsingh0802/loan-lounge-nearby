@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -7,7 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
+import { Calendar, MessageCircle, Phone } from 'lucide-react';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { lenders, loanCategories } from '@/data/lenders';
 
 const EligibilityPage = () => {
@@ -51,28 +53,85 @@ const EligibilityPage = () => {
     }
   };
 
+  const handleCall = () => {
+    // In a real app, this would initiate a call
+    toast.success("Initiating call with agent...");
+  };
+
+  const handleChat = () => {
+    // In a real app, this would open a chat window
+    toast.success("Opening chat with agent...");
+  };
+
   return (
-    <div className="pb-20">
+    <div className="min-h-screen flex flex-col">
       <Header 
         title="Check Eligibility" 
         showBack={true}
         onBackClick={() => navigate(-1)}
       />
 
-      <div className="p-4">
+      <div className="flex-1 p-4">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
           {lender && (
-            <div className="flex items-center gap-3 mb-4">
-              <div className="text-2xl bg-gray-100 h-10 w-10 flex items-center justify-center rounded-lg">
-                {lender.logo}
+            <>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="text-2xl bg-gray-100 h-10 w-10 flex items-center justify-center rounded-full">
+                  {lender.name.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="font-medium">{lender.name}</h3>
+                  <p className="text-xs text-gray-500">
+                    Interest: {lender.interestRateRange.min}% - {lender.interestRateRange.max}%
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-medium">{lender.name}</h3>
-                <p className="text-xs text-gray-500">
-                  Interest: {lender.interestRateRange.min}% - {lender.interestRateRange.max}%
-                </p>
+
+              <div className="flex gap-2 mb-4">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleCall}
+                >
+                  <Phone className="mr-2 h-4 w-4" />
+                  Call Agent
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleChat}
+                >
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  Chat Now
+                </Button>
+
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Schedule
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Schedule a Meeting</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                      <p className="text-sm text-gray-600 mb-4">
+                        Our agent will contact you shortly to schedule a meeting at your preferred time.
+                      </p>
+                      <Button onClick={() => toast.success("Meeting request sent!")}>
+                        Request Meeting
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
-            </div>
+            </>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -199,6 +258,8 @@ const EligibilityPage = () => {
           Your information will be processed securely.
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 };
