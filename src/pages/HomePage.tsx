@@ -4,7 +4,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LogIn, ChevronRight, MapPin, Star, LayoutGrid } from 'lucide-react';
 import Header from '@/components/Header';
 import LoanTypeChips from '@/components/LoanTypeChips';
-import LenderCard from '@/components/LenderCard';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { lenders } from '@/data/lenders';
@@ -34,7 +33,7 @@ const HomePage = () => {
         >
           <Link to="/admin">
             <LogIn className="mr-2 h-4 w-4" />
-            Admin
+            Login
           </Link>
         </Button>
       </Header>
@@ -49,7 +48,7 @@ const HomePage = () => {
 
         <section>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-medium">Nearby Lenders</h2>
+            <h2 className="text-lg font-medium">Nearby Loan Agents</h2>
             <Button variant="link" size="sm" className="text-primary">
               View All
             </Button>
@@ -60,8 +59,8 @@ const HomePage = () => {
               {filteredLenders.map(lender => (
                 <div key={lender.id} className="bg-white rounded-lg shadow-sm border p-3">
                   <Link to={`/lender/${lender.id}`} className="flex items-center gap-3">
-                    <div className="text-xl bg-gray-100 h-10 w-10 flex items-center justify-center rounded-lg">
-                      {lender.logo}
+                    <div className="text-xl bg-gray-100 h-10 w-10 flex items-center justify-center rounded-full">
+                      {lender.name.charAt(0)}
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium">{lender.name}</h3>
@@ -89,8 +88,8 @@ const HomePage = () => {
                   <Link to={`/lender/${lender.id}`} className="block">
                     <div className="p-4">
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="text-xl bg-gray-100 h-12 w-12 flex items-center justify-center rounded-lg">
-                          {lender.logo}
+                        <div className="text-xl bg-gray-100 h-12 w-12 flex items-center justify-center rounded-full">
+                          {lender.name.charAt(0)}
                         </div>
                         <div className="flex-1">
                           <h3 className="font-medium">{lender.name}</h3>
@@ -98,6 +97,11 @@ const HomePage = () => {
                             <div className="flex items-center">
                               <Star size={12} className="text-yellow-500 fill-yellow-500 mr-1" />
                               <span>{lender.rating}</span>
+                            </div>
+                            <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                            <div className="flex items-center">
+                              <MapPin size={12} className="mr-1" />
+                              <span>{lender.distance} km</span>
                             </div>
                           </div>
                         </div>
@@ -134,7 +138,7 @@ const HomePage = () => {
                     </div>
                     
                     <div className="bg-primary px-4 py-2 text-white text-center text-sm">
-                      Check Eligibility
+                      Contact Agent
                     </div>
                   </Link>
                 </Card>
@@ -148,3 +152,4 @@ const HomePage = () => {
 };
 
 export default HomePage;
+
