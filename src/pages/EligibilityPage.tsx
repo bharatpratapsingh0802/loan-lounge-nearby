@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -64,8 +65,8 @@ const EligibilityPage = () => {
   };
 
   const handleContactAgent = () => {
+    toast.info("Please login first to contact an agent");
     navigate('/admin');
-    toast.info("Please login to contact an agent");
   };
 
   return (
