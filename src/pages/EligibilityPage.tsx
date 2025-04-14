@@ -63,6 +63,11 @@ const EligibilityPage = () => {
     toast.success("Opening chat with agent...");
   };
 
+  const handleContactAgent = () => {
+    navigate('/admin');
+    toast.info("Please login to contact an agent");
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header 
@@ -91,7 +96,7 @@ const EligibilityPage = () => {
             <div className="space-y-4">
               <div className="p-4 bg-green-50 rounded-lg mb-4">
                 <p className="text-green-800">
-                  Congratulations! You are eligible for the loan. Contact our agent to proceed.
+                  Congratulations! You are eligible for the loan. Please login to contact our agent.
                 </p>
               </div>
               
@@ -99,7 +104,7 @@ const EligibilityPage = () => {
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={handleCall}
+                  onClick={handleContactAgent}
                 >
                   <Phone className="mr-2 h-4 w-4" />
                   Call Agent
@@ -108,7 +113,7 @@ const EligibilityPage = () => {
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={handleChat}
+                  onClick={handleContactAgent}
                 >
                   <MessageCircle className="mr-2 h-4 w-4" />
                   Chat Now
@@ -119,6 +124,7 @@ const EligibilityPage = () => {
                     <Button
                       variant="outline"
                       className="flex-1"
+                      onClick={handleContactAgent}
                     >
                       <Calendar className="mr-2 h-4 w-4" />
                       Schedule
@@ -130,10 +136,10 @@ const EligibilityPage = () => {
                     </DialogHeader>
                     <div className="py-4">
                       <p className="text-sm text-gray-600 mb-4">
-                        Our agent will contact you shortly to schedule a meeting at your preferred time.
+                        Please login first to schedule a meeting with our agent.
                       </p>
-                      <Button onClick={() => toast.success("Meeting request sent!")}>
-                        Request Meeting
+                      <Button onClick={handleContactAgent}>
+                        Login to Continue
                       </Button>
                     </div>
                   </DialogContent>
