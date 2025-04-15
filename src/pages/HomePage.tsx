@@ -1,6 +1,8 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogIn, ChevronRight, MapPin, Star } from 'lucide-react';
+import { toast } from "sonner";
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import LoanTypeChips from '@/components/LoanTypeChips';
@@ -18,6 +20,12 @@ const HomePage = () => {
   const filteredLenders = lenders.filter(
     lender => selectedLoanType === null || lender.loanTypes.includes(selectedLoanType)
   );
+
+  const handleLenderClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    toast.info("Please login first to view lender details");
+    navigate('/admin');
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -58,7 +66,11 @@ const HomePage = () => {
             <div className="space-y-2">
               {filteredLenders.map(lender => (
                 <div key={lender.id} className="bg-white rounded-lg shadow-sm border p-3">
-                  <Link to={`/lender/${lender.id}`} className="flex items-center gap-3">
+                  <Link 
+                    to={`/lender/${lender.id}`} 
+                    className="flex items-center gap-3"
+                    onClick={handleLenderClick}
+                  >
                     <div className="text-xl bg-gray-100 h-10 w-10 flex items-center justify-center rounded-full">
                       {lender.name.charAt(0)}
                     </div>
@@ -85,7 +97,11 @@ const HomePage = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {filteredLenders.map(lender => (
                 <Card key={lender.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                  <Link to={`/lender/${lender.id}`} className="block">
+                  <Link 
+                    to={`/lender/${lender.id}`} 
+                    className="block"
+                    onClick={handleLenderClick}
+                  >
                     <div className="p-4">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="text-xl bg-gray-100 h-12 w-12 flex items-center justify-center rounded-full">
