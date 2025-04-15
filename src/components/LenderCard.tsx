@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Star } from 'lucide-react';
@@ -15,8 +16,17 @@ const LenderCard: React.FC<LenderCardProps> = ({ lender }) => {
 
   const handleCardClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    toast.info("Please login first to view lender details");
-    navigate('/admin');
+    
+    // Check if user is logged in
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    
+    if (!isLoggedIn) {
+      toast.info("Please login first to view lender details");
+      navigate('/admin');
+    } else {
+      // Navigate to lender details if logged in
+      navigate(`/lender/${lender.id}`);
+    }
   };
 
   return (

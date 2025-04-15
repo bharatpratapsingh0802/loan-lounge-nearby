@@ -21,10 +21,14 @@ const AdminPage = () => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Set login status in localStorage
+    localStorage.setItem('isLoggedIn', 'true');
+    
     toast.success(`Logged in as ${userType}`);
     
     if (userType === 'customer') {
-      navigate('/');
+      // Navigate with loggedIn parameter to ensure state is updated immediately
+      navigate('/?loggedIn=true');
     } else {
       // If lender and first time, go to profile creation
       if (isFirstTimeLender) {
