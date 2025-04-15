@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { LogIn, ChevronRight, MapPin, Star } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { LogIn, ChevronRight, MapPin, Star, LogOut } from 'lucide-react';
 import { toast } from "sonner";
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -14,17 +14,45 @@ import { Separator } from '@/components/ui/separator';
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedLoanType, setSelectedLoanType] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Check if user is logged in
+  useEffect(() => {
+    // Check URL parameters or localStorage for login status
+    const params = new URLSearchParams(location.search);
+    const loginStatusFromURL = params.get('loggedIn') === 'true';
+    const loginStatusFromStorage = localStorage.getItem('isLoggedIn') === 'true';
+    
+    if (loginStatusFromURL || loginStatusFromStorage) {
+      setIsLoggedIn(true);
+      // Save login status to localStorage for persistence
+      localStorage.setItem('isLoggedIn', 'true');
+    }
+  }, [location]);
 
   const filteredLenders = lenders.filter(
     lender => selectedLoanType === null || lender.loanTypes.includes(selectedLoanType)
   );
 
-  const handleLenderClick = (e: React.MouseEvent) => {
+  const handleLenderClick = (e: React.MouseEvent, lenderId: string) => {
     e.preventDefault();
-    toast.info("Please login first to view lender details");
-    navigate('/admin');
+    
+    if (!isLoggedIn) {
+      toast.info("Please login first to view lender details");
+      navigate('/admin');
+    } else {
+      // Navigate to lender details if logged in
+      navigate(`/lender/${lenderId}`);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isLoggedIn');
+    setIsLoggedIn(false);
+    toast.success("Logged out successfully");
   };
 
   return (
@@ -33,17 +61,29 @@ const HomePage = () => {
         showSearch 
         className="mb-4"
       >
-        <Button 
-          asChild 
-          variant="outline" 
-          size="sm" 
-          className="ml-auto"
-        >
-          <Link to="/admin">
-            <LogIn className="mr-2 h-4 w-4" />
-            Login
-          </Link>
-        </Button>
+        {!isLoggedIn ? (
+          <Button 
+            asChild 
+            variant="outline" 
+            size="sm" 
+            className="ml-auto"
+          >
+            <Link to="/admin">
+              <LogIn className="mr-2 h-4 w-4" />
+              Login
+            </Link>
+          </Button>
+        ) : (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="ml-auto"
+            onClick={handleLogout}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
+        )}
       </Header>
 
       <div className="flex-1 px-4 pb-20">
@@ -69,7 +109,7 @@ const HomePage = () => {
                   <Link 
                     to={`/lender/${lender.id}`} 
                     className="flex items-center gap-3"
-                    onClick={handleLenderClick}
+                    onClick={(e) => handleLenderClick(e, lender.id)}
                   >
                     <div className="text-xl bg-gray-100 h-10 w-10 flex items-center justify-center rounded-full">
                       {lender.name.charAt(0)}
@@ -100,7 +140,7 @@ const HomePage = () => {
                   <Link 
                     to={`/lender/${lender.id}`} 
                     className="block"
-                    onClick={handleLenderClick}
+                    onClick={(e) => handleLenderClick(e, lender.id)}
                   >
                     <div className="p-4">
                       <div className="flex items-center gap-3 mb-3">
