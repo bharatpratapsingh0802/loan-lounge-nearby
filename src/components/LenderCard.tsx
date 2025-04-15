@@ -1,7 +1,8 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Star } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from "sonner";
 import { Lender } from '@/data/lenders';
 import { Button } from '@/components/ui/button';
 
@@ -10,9 +11,17 @@ interface LenderCardProps {
 }
 
 const LenderCard: React.FC<LenderCardProps> = ({ lender }) => {
+  const navigate = useNavigate();
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    toast.info("Please login first to view lender details");
+    navigate('/admin');
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
-      <Link to={`/lender/${lender.id}`} className="block">
+      <Link to={`/lender/${lender.id}`} className="block" onClick={handleCardClick}>
         <div className="flex items-center gap-4 mb-3">
           <div className="text-3xl bg-gray-100 h-12 w-12 flex items-center justify-center rounded-lg">
             {lender.logo}
@@ -63,7 +72,9 @@ const LenderCard: React.FC<LenderCardProps> = ({ lender }) => {
         </div>
         
         <Button asChild className="w-full">
-          <Link to={`/eligibility/${lender.id}`}>Check Eligibility</Link>
+          <Link to={`/eligibility/${lender.id}`} onClick={handleCardClick}>
+            Check Eligibility
+          </Link>
         </Button>
       </div>
     </div>
