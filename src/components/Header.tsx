@@ -9,13 +9,23 @@ interface HeaderProps {
   title?: string;
   showBack?: boolean;
   onBackClick?: () => void;
+  showSearch?: boolean;
+  className?: string;
+  children?: React.ReactNode;
 }
 
-const Header: React.FC<HeaderProps> = ({ title, showBack = false, onBackClick }) => {
+const Header: React.FC<HeaderProps> = ({ 
+  title, 
+  showBack = false, 
+  onBackClick, 
+  showSearch = false, 
+  className = "", 
+  children 
+}) => {
   const { t } = useTranslation();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className={`sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${className}`}>
       <div className="container flex h-14 items-center">
         <div className="flex flex-1 items-center justify-between">
           <div className="flex items-center gap-2">
@@ -26,7 +36,10 @@ const Header: React.FC<HeaderProps> = ({ title, showBack = false, onBackClick })
             )}
             {title && <h1 className="font-medium">{t(title)}</h1>}
           </div>
-          <LanguageSelector />
+          <div className="flex items-center gap-2">
+            {children}
+            <LanguageSelector />
+          </div>
         </div>
       </div>
     </header>
