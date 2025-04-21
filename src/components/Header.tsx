@@ -1,59 +1,33 @@
 
 import React from 'react';
-import { Search, MapPin, ChevronLeft } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import LanguageSelector from './LanguageSelector';
+import { useTranslation } from 'react-i18next';
 
 interface HeaderProps {
   title?: string;
   showBack?: boolean;
-  showSearch?: boolean;
-  className?: string;
   onBackClick?: () => void;
-  children?: React.ReactNode;
 }
 
-const Header: React.FC<HeaderProps> = ({ 
-  title, 
-  showBack = false, 
-  showSearch = false,
-  className,
-  onBackClick,
-  children
-}) => {
+const Header: React.FC<HeaderProps> = ({ title, showBack = false, onBackClick }) => {
+  const { t } = useTranslation();
+
   return (
-    <header className={cn(
-      "sticky top-0 z-10 bg-white shadow-sm px-4 py-3",
-      className
-    )}>
-      <div className="flex items-center gap-3">
-        {showBack && (
-          <button 
-            onClick={onBackClick} 
-            className="text-gray-700 hover:text-primary"
-          >
-            <ChevronLeft size={24} />
-          </button>
-        )}
-        
-        {title && <h1 className="text-lg font-medium">{title}</h1>}
-        
-        {showSearch && (
-          <div className="flex-1 relative">
-            <div className="flex items-center border border-gray-300 rounded-full bg-gray-50 px-3 py-2">
-              <MapPin size={18} className="text-gray-500 mr-2" />
-              <input
-                type="text"
-                placeholder="Search location..."
-                className="flex-1 bg-transparent outline-none text-sm"
-              />
-              <button className="text-primary p-1">
-                <Search size={18} />
-              </button>
-            </div>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center">
+        <div className="flex flex-1 items-center justify-between">
+          <div className="flex items-center gap-2">
+            {showBack && (
+              <Button variant="ghost" size="icon" onClick={onBackClick}>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            {title && <h1 className="font-medium">{t(title)}</h1>}
           </div>
-        )}
-        
-        {children}
+          <LanguageSelector />
+        </div>
       </div>
     </header>
   );

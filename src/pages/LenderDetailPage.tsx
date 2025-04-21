@@ -1,12 +1,13 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowRight, Clock, File, MapPin, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { lenders } from '@/data/lenders';
 import Header from '@/components/Header';
+import { useTranslation } from 'react-i18next';
 
 const LenderDetailPage = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const lender = lenders.find(l => l.id === id);
@@ -71,28 +72,28 @@ const LenderDetailPage = () => {
             onClick={() => navigate(`/eligibility/${lender.id}`)}
             className="w-full"
           >
-            Check Eligibility
+            {t('check_eligibility')}
           </Button>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-5">
-          <h2 className="text-lg font-medium mb-3">Loan Details</h2>
+          <h2 className="text-lg font-medium mb-3">{t('loan_details')}</h2>
           
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <p className="text-sm text-gray-500">Interest Rate</p>
+              <p className="text-sm text-gray-500">{t('interest_rate')}</p>
               <p className="font-medium text-primary">
                 {lender.interestRateRange.min}% - {lender.interestRateRange.max}%
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Max Loan Amount</p>
+              <p className="text-sm text-gray-500">{t('max_loan_amount')}</p>
               <p className="font-medium">₹{lender.maxLoanAmount.toLocaleString()}</p>
             </div>
           </div>
           
           <div className="mb-4">
-            <p className="text-sm text-gray-500 mb-2">Available Loan Types</p>
+            <p className="text-sm text-gray-500 mb-2">{t('available_loan_types')}</p>
             <div className="flex flex-wrap gap-2">
               {lender.loanTypes.map((type, idx) => (
                 <span 
@@ -107,7 +108,7 @@ const LenderDetailPage = () => {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <h2 className="text-lg font-medium mb-3">Required Documents</h2>
+          <h2 className="text-lg font-medium mb-3">{t('required_documents')}</h2>
           
           <div className="space-y-2">
             {lender.documents.map((doc, idx) => (
@@ -124,7 +125,7 @@ const LenderDetailPage = () => {
               variant="outline" 
               className="w-full justify-between"
             >
-              Apply Now
+              {t('apply_now')}
               <ArrowRight size={16} />
             </Button>
           </div>
