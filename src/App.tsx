@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -6,6 +7,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import BottomNavigation from "@/components/BottomNavigation";
 import SignupPage from "./pages/SignupPage";
+import HomePage from "./pages/HomePage";
+import LenderDetailPage from "./pages/LenderDetailPage";
+import EligibilityPage from "./pages/EligibilityPage";
+import OffersPage from "./pages/OffersPage";
+import ProfilePage from "./pages/ProfilePage";
+import AdminPage from "./pages/AdminPage";
+import LenderProfilePage from "./pages/LenderProfilePage";
+import LenderDashboardPage from "./pages/LenderDashboardPage";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
