@@ -1,1 +1,8 @@
+
 project_id = "fbeuysqpxmmcjfulofjl"
+
+[functions.auth]
+verify_jwt = false
+
+[functions.add-provider]
+verify_jwt = true
