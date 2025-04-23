@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -6,19 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import BottomNavigation from "@/components/BottomNavigation";
+import SignupPage from "./pages/SignupPage";
 
-// Pages
-import HomePage from "./pages/HomePage";
-import LenderDetailPage from "./pages/LenderDetailPage";
-import EligibilityPage from "./pages/EligibilityPage";
-import OffersPage from "./pages/OffersPage";
-import ProfilePage from "./pages/ProfilePage";
-import NotFound from "./pages/NotFound";
-import AdminPage from "./pages/AdminPage";
-import LenderProfilePage from "./pages/LenderProfilePage";
-import LenderDashboardPage from "./pages/LenderDashboardPage";
-
-// Create a new QueryClient instance
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -39,6 +27,7 @@ const App = () => (
               <Route path="/admin/lender-profile" element={<LenderProfilePage />} />
               <Route path="/admin/lender-profile/edit/:id" element={<LenderProfilePage />} />
               <Route path="/admin/dashboard" element={<LenderDashboardPage />} />
+              <Route path="/signup" element={<SignupPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <BottomNavigation />

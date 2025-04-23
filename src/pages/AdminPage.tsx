@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -124,8 +123,18 @@ const AdminPage = () => {
             </form>
           </CardContent>
           
-          <CardFooter className="flex justify-center text-sm text-gray-500">
-            Need help? Contact support
+          <CardFooter className="flex flex-col space-y-4 items-center text-sm text-gray-500">
+            <div>
+              Don't have an account?{" "}
+              <Button
+                variant="link"
+                className="p-0 h-auto font-semibold"
+                onClick={() => navigate("/signup")}
+              >
+                Sign up
+              </Button>
+            </div>
+            <div>Need help? Contact support</div>
           </CardFooter>
         </Card>
       </div>
