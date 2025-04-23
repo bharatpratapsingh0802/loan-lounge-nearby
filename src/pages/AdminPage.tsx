@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import { Mail, Phone } from 'lucide-react';
 import Header from '@/components/Header';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,24 +18,31 @@ const AdminPage = () => {
   const [userType, setUserType] = useState('customer');
   const [isFirstTimeLender, setIsFirstTimeLender] = useState(true); // For demo purposes
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Set login status in localStorage
-    localStorage.setItem('isLoggedIn', 'true');
-    
-    toast.success(`Logged in as ${userType}`);
-    
-    if (userType === 'customer') {
-      // Navigate with loggedIn parameter to ensure state is updated immediately
-      navigate('/?loggedIn=true');
-    } else {
-      // If lender and first time, go to profile creation
-      if (isFirstTimeLender) {
-        navigate('/admin/lender-profile');
+    try {
+      let { error } = await supabase.auth.signInWithPassword({
+        email: email,
+        phone: phone,
+        password: 'dummy-password' // You'll need to add a password field to your form
+      });
+
+      if (error) throw error;
+
+      toast.success(`Logged in successfully`);
+      
+      if (userType === 'customer') {
+        navigate('/?loggedIn=true');
       } else {
-        navigate('/admin/dashboard');
+        if (isFirstTimeLender) {
+          navigate('/admin/lender-profile');
+        } else {
+          navigate('/admin/dashboard');
+        }
       }
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred during login");
     }
   };
 

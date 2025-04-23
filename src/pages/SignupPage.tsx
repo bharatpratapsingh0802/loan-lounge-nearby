@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -6,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, Mail, User, Lock } from 'lucide-react';
 import { z } from 'zod';
 import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 
 import {
   Form,
@@ -46,10 +46,26 @@ const SignupPage = () => {
     },
   });
 
-  const onSubmit = (data: SignupFormValues) => {
-    // For demo purposes, just show a success message and redirect
-    toast.success("Account created successfully!");
-    navigate('/admin');
+  const onSubmit = async (data: SignupFormValues) => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            first_name: data.name.split(' ')[0],
+            last_name: data.name.split(' ').slice(1).join(' '),
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success("Account created successfully! Please check your email to verify your account.");
+      navigate('/');
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred during signup");
+    }
   };
 
   return (
