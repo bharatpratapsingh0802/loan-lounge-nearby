@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -61,8 +62,8 @@ const SignupPage = () => {
 
       if (error) throw error;
 
-      toast.success("Account created successfully! Please check your email to verify your account.");
-      navigate('/');
+      toast.success("Account created successfully!");
+      navigate('/admin'); // Redirect to login page
     } catch (error: any) {
       toast.error(error.message || "An error occurred during signup");
     }
