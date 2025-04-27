@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
-import { Mail, Phone } from 'lucide-react';
+import { Mail, Phone, Eye, EyeOff } from 'lucide-react';
 import Header from '@/components/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -15,8 +16,10 @@ const AdminPage = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState('customer');
-  const [isFirstTimeLender, setIsFirstTimeLender] = useState(true); // For demo purposes
+  const [isFirstTimeLender, setIsFirstTimeLender] = useState(true);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,8 +27,7 @@ const AdminPage = () => {
     try {
       let { error } = await supabase.auth.signInWithPassword({
         email: email,
-        phone: phone,
-        password: 'dummy-password' // You'll need to add a password field to your form
+        password: password
       });
 
       if (error) throw error;
@@ -107,6 +109,32 @@ const AdminPage = () => {
               </Tabs>
               
               <div className="space-y-4 mb-6">
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
                 <Label>I am a:</Label>
                 <RadioGroup 
                   value={userType} 
