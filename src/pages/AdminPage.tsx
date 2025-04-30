@@ -12,25 +12,71 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
+import EmailVerification from '@/components/EmailVerification';
 
 const AdminPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, isVerified, isCheckingVerification, checkVerification, resendVerificationEmail } = useAuth();
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState('customer');
   const [loading, setLoading] = useState(false);
+  const [verificationChecking, setVerificationChecking] = useState(false);
+
+  // Periodically check verification status if user exists but is not verified
+  useEffect(() => {
+    if (user && !isVerified) {
+      const checkInterval = setInterval(async () => {
+        console.log("Checking verification status...");
+        setVerificationChecking(true);
+        const isNowVerified = await checkVerification();
+        setVerificationChecking(false);
+        
+        if (isNowVerified) {
+          console.log("User is now verified!");
+          clearInterval(checkInterval);
+          // Redirect based on user type
+          redirectBasedOnUserType();
+        }
+      }, 5000); // Check every 5 seconds
+      
+      return () => clearInterval(checkInterval);
+    }
+  }, [user, isVerified]);
 
   // Check if user is already logged in
   useEffect(() => {
     if (user) {
-      console.log("User already logged in, checking profile...", user);
-      checkUserTypeAndRedirect();
+      console.log("User already logged in, checking verification status...", user);
+      
+      if (!isVerified) {
+        console.log("User is logged in but not verified");
+        // Show verification screen, handled in the render
+      } else {
+        console.log("User is verified, checking profile...");
+        checkUserTypeAndRedirect();
+      }
     }
-  }, [user]);
+  }, [user, isVerified]);
+
+  const redirectBasedOnUserType = async () => {
+    try {
+      console.log("Redirecting based on user type...");
+      const userMetadata = user?.user_metadata;
+      const loggedInType = userMetadata?.user_type || 'customer';
+      
+      if (loggedInType === 'lender') {
+        await checkUserTypeAndRedirect();
+      } else {
+        navigate('/?loggedIn=true');
+      }
+    } catch (error) {
+      console.error("Error redirecting:", error);
+    }
+  };
 
   const checkUserTypeAndRedirect = async () => {
     try {
@@ -86,33 +132,8 @@ const AdminPage = () => {
       toast.success(`Logged in successfully`);
       console.log("Login successful, user data:", data);
       
-      const userMetadata = data?.user?.user_metadata;
-      const loggedInType = userMetadata?.user_type || 'customer';
-      console.log("User type from metadata:", loggedInType);
-      
-      if (loggedInType === 'customer') {
-        navigate('/?loggedIn=true');
-      } else {
-        // Check if the lender has completed their profile
-        const { data: lenderProfile, error: lenderError } = await supabase
-          .from('loanagents')
-          .select('id')
-          .eq('user_id', data?.user?.id)
-          .maybeSingle();
-        
-        if (lenderError && lenderError.code !== 'PGRST116') {
-          console.error("Error checking lender profile:", lenderError);
-          throw lenderError;
-        }
-        
-        console.log("Lender profile check after login:", lenderProfile);
-        
-        if (lenderProfile) {
-          navigate('/admin/dashboard');
-        } else {
-          navigate('/admin/lender-profile');
-        }
-      }
+      // After successful login, verification status will be checked via useEffect
+      // that watches for user changes
     } catch (error: any) {
       console.error("Login error:", error);
       toast.error(error.message || "An error occurred during login");
@@ -121,6 +142,28 @@ const AdminPage = () => {
     }
   };
 
+  // Show email verification screen if user exists but is not verified
+  if (user && !isVerified) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header 
+          title="Email Verification" 
+          showBack={true}
+          onBackClick={() => navigate('/')}
+        />
+        
+        <div className="flex-1 flex items-center justify-center p-4">
+          <EmailVerification 
+            email={user.email || ''}
+            onResendEmail={resendVerificationEmail}
+            isLoading={verificationChecking || isCheckingVerification}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Regular login form
   return (
     <div className="min-h-screen bg-gray-50">
       <Header 
