@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogIn, ChevronRight, MapPin, Star, LogOut } from 'lucide-react';
+import { LogIn, ChevronRight, MapPin, Star, LogOut, UserPlus } from 'lucide-react';
 import { toast } from "sonner";
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -61,29 +60,41 @@ const HomePage = () => {
         showSearch 
         className="mb-4"
       >
-        {!isLoggedIn ? (
-          <Button 
-            asChild 
-            variant="outline" 
-            size="sm" 
-            className="ml-auto"
-          >
-            <Link to="/admin">
-              <LogIn className="mr-2 h-4 w-4" />
-              Login
-            </Link>
-          </Button>
-        ) : (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="ml-auto"
-            onClick={handleLogout}
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-          </Button>
-        )}
+        <div className="ml-auto flex gap-2">
+          {!isLoggedIn ? (
+            <>
+              <Button 
+                asChild 
+                variant="outline" 
+                size="sm" 
+              >
+                <Link to="/admin">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login
+                </Link>
+              </Button>
+              <Button 
+                asChild 
+                variant="default" 
+                size="sm" 
+              >
+                <Link to="/signup">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Sign Up
+                </Link>
+              </Button>
+            </>
+          ) : (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleLogout}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          )}
+        </div>
       </Header>
 
       <div className="flex-1 px-4 pb-20">
