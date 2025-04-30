@@ -16,7 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const AdminPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -27,14 +27,17 @@ const AdminPage = () => {
   // Check if user is already logged in
   useEffect(() => {
     if (user) {
+      console.log("User already logged in, checking profile...", user);
       checkUserTypeAndRedirect();
     }
   }, [user]);
 
   const checkUserTypeAndRedirect = async () => {
     try {
+      console.log("Checking user type and redirecting...");
       // Check if the user is a lender
       if (user?.user_metadata?.user_type === 'lender') {
+        console.log("User is a lender, checking if profile exists");
         // Check if the lender has completed their profile
         const { data: lenderProfile, error } = await supabase
           .from('loanagents')
@@ -43,20 +46,27 @@ const AdminPage = () => {
           .maybeSingle();
         
         if (error && error.code !== 'PGRST116') {
+          console.error("Error fetching lender profile:", error);
           throw error;
         }
         
+        console.log("Lender profile check result:", lenderProfile);
+        
         if (lenderProfile) {
+          console.log("Lender has profile, redirecting to dashboard");
           navigate('/admin/dashboard');
         } else {
+          console.log("Lender has no profile, redirecting to create profile");
           navigate('/admin/lender-profile');
         }
       } else {
         // For customers, redirect to home
+        console.log("User is a customer, redirecting to home");
         navigate('/?loggedIn=true');
       }
     } catch (error: any) {
       console.error('Error checking user type:', error.message);
+      toast.error("Error checking profile status");
     }
   };
 
@@ -65,6 +75,7 @@ const AdminPage = () => {
     
     try {
       setLoading(true);
+      console.log("Attempting to login with:", email);
       let { data, error } = await supabase.auth.signInWithPassword({
         email: email,
         password: password
@@ -73,9 +84,11 @@ const AdminPage = () => {
       if (error) throw error;
 
       toast.success(`Logged in successfully`);
+      console.log("Login successful, user data:", data);
       
       const userMetadata = data?.user?.user_metadata;
       const loggedInType = userMetadata?.user_type || 'customer';
+      console.log("User type from metadata:", loggedInType);
       
       if (loggedInType === 'customer') {
         navigate('/?loggedIn=true');
@@ -88,8 +101,11 @@ const AdminPage = () => {
           .maybeSingle();
         
         if (lenderError && lenderError.code !== 'PGRST116') {
+          console.error("Error checking lender profile:", lenderError);
           throw lenderError;
         }
+        
+        console.log("Lender profile check after login:", lenderProfile);
         
         if (lenderProfile) {
           navigate('/admin/dashboard');
@@ -98,6 +114,7 @@ const AdminPage = () => {
         }
       }
     } catch (error: any) {
+      console.error("Login error:", error);
       toast.error(error.message || "An error occurred during login");
     } finally {
       setLoading(false);

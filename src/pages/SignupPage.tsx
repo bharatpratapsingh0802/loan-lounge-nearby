@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,6 +39,7 @@ const SignupPage = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -53,7 +54,10 @@ const SignupPage = () => {
 
   const onSubmit = async (data: SignupFormValues) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      setIsLoading(true);
+      console.log("Starting signup process", data.email);
+      
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -61,23 +65,24 @@ const SignupPage = () => {
             first_name: data.name.split(' ')[0],
             last_name: data.name.split(' ').slice(1).join(' '),
             user_type: data.userType,
-          }
+            full_name: data.name
+          },
+          emailRedirectTo: window.location.origin + '/admin'
         }
       });
 
       if (error) throw error;
-
-      toast.success("Account created successfully!");
       
-      if (data.userType === 'lender') {
-        // For lenders, redirect to complete their profile
-        navigate('/admin/lender-profile');
-      } else {
-        // For customers, redirect to login
-        navigate('/admin');
-      }
+      console.log("Signup successful, redirecting to verification page", signUpData);
+      
+      toast.success("Account created successfully! Please check your email to verify your account.");
+      navigate('/admin');
+      
     } catch (error: any) {
+      console.error("Signup error:", error);
       toast.error(error.message || "An error occurred during signup");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -100,7 +105,7 @@ const SignupPage = () => {
                   <FormLabel>Full Name</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Input {...field} placeholder="Enter your full name" />
+                      <Input {...field} placeholder="Enter your full name" disabled={isLoading} />
                       <User className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
                     </div>
                   </FormControl>
@@ -117,7 +122,7 @@ const SignupPage = () => {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Input {...field} type="email" placeholder="Enter your email" />
+                      <Input {...field} type="email" placeholder="Enter your email" disabled={isLoading} />
                       <Mail className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
                     </div>
                   </FormControl>
@@ -138,11 +143,13 @@ const SignupPage = () => {
                         {...field}
                         type={showPassword ? "text" : "password"}
                         placeholder="Create a password"
+                        disabled={isLoading}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-2.5 text-gray-400"
+                        disabled={isLoading}
                       >
                         {showPassword ? (
                           <EyeOff className="h-5 w-5" />
@@ -169,11 +176,13 @@ const SignupPage = () => {
                         {...field}
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Confirm your password"
+                        disabled={isLoading}
                       />
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         className="absolute right-3 top-2.5 text-gray-400"
+                        disabled={isLoading}
                       >
                         {showConfirmPassword ? (
                           <EyeOff className="h-5 w-5" />
@@ -199,6 +208,7 @@ const SignupPage = () => {
                       onValueChange={field.onChange} 
                       value={field.value}
                       className="flex space-x-4"
+                      disabled={isLoading}
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="lender" id="lender" />
@@ -216,8 +226,8 @@ const SignupPage = () => {
               )}
             />
 
-            <Button type="submit" className="w-full">
-              Create Account
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Creating Account..." : "Create Account"}
             </Button>
 
             <div className="text-center text-sm text-gray-500">
@@ -226,6 +236,7 @@ const SignupPage = () => {
                 variant="link"
                 className="p-0 h-auto font-semibold"
                 onClick={() => navigate("/admin")}
+                disabled={isLoading}
               >
                 Log in
               </Button>

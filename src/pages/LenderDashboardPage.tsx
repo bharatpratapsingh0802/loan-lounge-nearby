@@ -35,6 +35,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { toast } from "sonner";
+import { useAuth } from '@/contexts/AuthContext';
 
 // Sample lender data
 const lenders = [
@@ -63,6 +64,7 @@ const lenders = [
 
 const LenderDashboardPage = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   const handleEdit = (id: string) => {
     navigate(`/admin/lender-profile/edit/${id}`);
@@ -73,9 +75,14 @@ const LenderDashboardPage = () => {
     toast.success(`Lender with ID ${id} deleted`);
   };
 
-  const handleLogout = () => {
-    navigate('/admin');
-    toast.success('Logged out successfully');
+  const handleLogout = async () => {
+    console.log("Logout button clicked");
+    try {
+      await signOut();
+      // Navigation is handled in the auth context
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
   };
 
   return (
