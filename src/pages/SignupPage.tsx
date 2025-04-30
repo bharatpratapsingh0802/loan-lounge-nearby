@@ -18,13 +18,16 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import Header from '@/components/Header';
 
 const signupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  confirmPassword: z.string()
+  confirmPassword: z.string(),
+  userType: z.enum(['customer', 'lender']),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -44,6 +47,7 @@ const SignupPage = () => {
       email: '',
       password: '',
       confirmPassword: '',
+      userType: 'customer',
     },
   });
 
@@ -56,6 +60,7 @@ const SignupPage = () => {
           data: {
             first_name: data.name.split(' ')[0],
             last_name: data.name.split(' ').slice(1).join(' '),
+            user_type: data.userType,
           }
         }
       });
@@ -63,7 +68,14 @@ const SignupPage = () => {
       if (error) throw error;
 
       toast.success("Account created successfully!");
-      navigate('/admin'); // Redirect to login page
+      
+      if (data.userType === 'lender') {
+        // For lenders, redirect to complete their profile
+        navigate('/admin/lender-profile');
+      } else {
+        // For customers, redirect to login
+        navigate('/admin');
+      }
     } catch (error: any) {
       toast.error(error.message || "An error occurred during signup");
     }
@@ -170,6 +182,34 @@ const SignupPage = () => {
                         )}
                       </button>
                     </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="userType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>I am signing up as a:</FormLabel>
+                  <FormControl>
+                    <RadioGroup 
+                      onValueChange={field.onChange} 
+                      value={field.value}
+                      className="flex space-x-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="lender" id="lender" />
+                        <Label htmlFor="lender">Lender</Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="customer" id="customer" />
+                        <Label htmlFor="customer">Customer</Label>
+                      </div>
+                    </RadioGroup>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

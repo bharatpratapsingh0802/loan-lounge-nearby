@@ -1,6 +1,5 @@
-
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from "sonner";
 import { Plus, Minus, Upload, MapPin } from 'lucide-react';
 import Header from '@/components/Header';
@@ -11,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LoanProduct {
   id: string;
@@ -47,6 +48,12 @@ const loanTypeOptions = [
 
 const LenderProfilePage = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [loanagentId, setLoanagentId] = useState<string | null>(null);
+  
+  // Basic information
   const [name, setName] = useState('');
   const [tagline, setTagline] = useState('');
   const [description, setDescription] = useState('');
@@ -88,6 +95,107 @@ const LenderProfilePage = () => {
       requiredDocuments: []
     }
   ]);
+
+  // Fetch loanagent data if ID is provided
+  useEffect(() => {
+    if (user) {
+      fetchLoanAgentData();
+    }
+  }, [user, id]);
+
+  const fetchLoanAgentData = async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      
+      // If id is provided, fetch data for that specific loanagent
+      if (id) {
+        const { data: loanagent, error: loanagentError } = await supabase
+          .from('loanagents')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (loanagentError) throw loanagentError;
+        if (!loanagent) throw new Error('Loan agent not found');
+
+        // Set loanagent data
+        setLoanagentId(loanagent.id);
+        setName(loanagent.name || '');
+        setTagline(loanagent.tagline || '');
+        setDescription(loanagent.description || '');
+        setLogoPreview(loanagent.logo_url || '');
+        setMinIncome(loanagent.min_income?.toString() || '');
+        setMinCreditScore(loanagent.min_credit_score?.toString() || '');
+        setMinAge(loanagent.min_age?.toString() || '');
+        setMaxAge(loanagent.max_age?.toString() || '');
+        setAddress(loanagent.address || '');
+        setCity(loanagent.city || '');
+        setState(loanagent.state || '');
+        setPincode(loanagent.pincode || '');
+        setContactNumber(loanagent.contact_number || '');
+        setEmail(loanagent.email || '');
+        setWorkingHours(loanagent.working_hours || '');
+        setLatitude(loanagent.latitude || '');
+        setLongitude(loanagent.longitude || '');
+        setWhatsappNumber(loanagent.whatsapp_number || '');
+        setApplyNowLink(loanagent.apply_now_link || '');
+        setGoogleMapsUrl(loanagent.google_maps_url || '');
+
+        // Fetch employment types
+        const { data: empTypes, error: empTypesError } = await supabase
+          .from('loanagent_employment_types')
+          .select('employment_type')
+          .eq('loanagent_id', loanagent.id);
+
+        if (empTypesError) throw empTypesError;
+        setEmploymentTypes(empTypes.map(et => et.employment_type));
+
+        // Fetch loan products
+        const { data: products, error: productsError } = await supabase
+          .from('loan_products')
+          .select('*')
+          .eq('loanagent_id', loanagent.id);
+
+        if (productsError) throw productsError;
+        
+        if (products && products.length > 0) {
+          setLoanProducts(products.map(p => ({
+            id: p.id,
+            type: p.type,
+            minInterestRate: p.min_interest_rate.toString(),
+            maxInterestRate: p.max_interest_rate.toString(),
+            maxLoanAmount: p.max_loan_amount.toString(),
+            minTenure: p.min_tenure.toString(),
+            maxTenure: p.max_tenure.toString(),
+            processingFee: p.processing_fee.toString(),
+            requiredDocuments: p.required_documents || []
+          })));
+        }
+      } else {
+        // Check if user already has a loanagent profile
+        const { data: existingLoanagent, error: existingError } = await supabase
+          .from('loanagents')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (existingError && existingError.code !== 'PGRST116') {
+          throw existingError;
+        }
+        
+        if (existingLoanagent) {
+          // If user already has a profile, redirect to edit
+          navigate(`/admin/lender-profile/edit/${existingLoanagent.id}`);
+        }
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Error fetching loan agent data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -152,19 +260,171 @@ const LenderProfilePage = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const uploadLogo = async (): Promise<string | null> => {
+    if (!logo) return logoPreview || null;
+    
+    // Create storage bucket if it doesn't exist
+    const { data: bucketData, error: bucketError } = await supabase.storage.getBucket('lender-logos');
+    if (bucketError && bucketError.message.includes('does not exist')) {
+      await supabase.storage.createBucket('lender-logos', {
+        public: true
+      });
+    }
+    
+    // Upload the logo
+    const fileExt = logo.name.split('.').pop();
+    const fileName = `${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
+    
+    const { error: uploadError, data } = await supabase.storage
+      .from('lender-logos')
+      .upload(filePath, logo);
+    
+    if (uploadError) {
+      toast.error('Error uploading logo');
+      return null;
+    }
+    
+    const { data: { publicUrl } } = supabase.storage
+      .from('lender-logos')
+      .getPublicUrl(filePath);
+    
+    return publicUrl;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Form validation would go here
-    
-    toast.success("Lender profile saved successfully");
-    navigate('/admin/dashboard');
+    if (!user) {
+      toast.error('You must be logged in');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Upload logo if present
+      const logoUrl = await uploadLogo();
+      
+      // Save or update loanagent data
+      const loanagentData = {
+        user_id: user.id,
+        name,
+        tagline,
+        description,
+        logo_url: logoUrl,
+        min_income: minIncome ? parseFloat(minIncome) : null,
+        min_credit_score: minCreditScore ? parseInt(minCreditScore) : null,
+        min_age: minAge ? parseInt(minAge) : null,
+        max_age: maxAge ? parseInt(maxAge) : null,
+        address,
+        city,
+        state,
+        pincode,
+        contact_number: contactNumber,
+        email,
+        working_hours: workingHours,
+        latitude,
+        longitude,
+        whatsapp_number: whatsappNumber,
+        apply_now_link: applyNowLink,
+        google_maps_url: googleMapsUrl,
+      };
+      
+      let loanagent;
+      
+      if (loanagentId) {
+        // Update existing loanagent
+        const { data, error } = await supabase
+          .from('loanagents')
+          .update(loanagentData)
+          .eq('id', loanagentId)
+          .select()
+          .single();
+          
+        if (error) throw error;
+        loanagent = data;
+      } else {
+        // Create new loanagent
+        const { data, error } = await supabase
+          .from('loanagents')
+          .insert([loanagentData])
+          .select()
+          .single();
+          
+        if (error) throw error;
+        loanagent = data;
+        setLoanagentId(loanagent.id);
+      }
+      
+      // Save employment types
+      if (loanagent) {
+        // First, delete existing employment types
+        await supabase
+          .from('loanagent_employment_types')
+          .delete()
+          .eq('loanagent_id', loanagent.id);
+          
+        // Then, insert new ones
+        if (employmentTypes.length > 0) {
+          const employmentData = employmentTypes.map(type => ({
+            loanagent_id: loanagent.id,
+            employment_type: type
+          }));
+          
+          const { error: empError } = await supabase
+            .from('loanagent_employment_types')
+            .insert(employmentData);
+            
+          if (empError) throw empError;
+        }
+        
+        // Process loan products
+        for (const product of loanProducts) {
+          const productData = {
+            loanagent_id: loanagent.id,
+            type: product.type,
+            min_interest_rate: parseFloat(product.minInterestRate),
+            max_interest_rate: parseFloat(product.maxInterestRate),
+            max_loan_amount: parseFloat(product.maxLoanAmount),
+            min_tenure: parseInt(product.minTenure),
+            max_tenure: parseInt(product.maxTenure),
+            processing_fee: parseFloat(product.processingFee),
+            required_documents: product.requiredDocuments
+          };
+          
+          if (product.id.length < 36) {
+            // This is a new product (has a temporary ID)
+            const { error: prodError } = await supabase
+              .from('loan_products')
+              .insert([productData]);
+              
+            if (prodError) throw prodError;
+          } else {
+            // This is an existing product
+            const { error: prodError } = await supabase
+              .from('loan_products')
+              .update(productData)
+              .eq('id', product.id);
+              
+            if (prodError) throw prodError;
+          }
+        }
+      }
+      
+      toast.success("Lender profile saved successfully");
+      navigate('/admin/dashboard');
+    } catch (error: any) {
+      toast.error(error.message || 'Error saving lender profile');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <Header 
-        title="Create Lender Profile" 
+        title={id ? "Edit Lender Profile" : "Create Lender Profile"}
         showBack={true}
         onBackClick={() => navigate('/admin')}
       />
@@ -185,6 +445,7 @@ const LenderProfilePage = () => {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. QuickCash Finance"
                   required
+                  disabled={loading}
                 />
               </div>
               
@@ -195,6 +456,7 @@ const LenderProfilePage = () => {
                   value={tagline}
                   onChange={(e) => setTagline(e.target.value)}
                   placeholder="e.g. Quick loans with minimal documentation"
+                  disabled={loading}
                 />
               </div>
               
@@ -206,6 +468,7 @@ const LenderProfilePage = () => {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Brief description of your lending services"
                   required
+                  disabled={loading}
                 />
               </div>
               
@@ -228,6 +491,7 @@ const LenderProfilePage = () => {
                       variant="outline"
                       className="w-full"
                       onClick={() => document.getElementById('logo-upload')?.click()}
+                      disabled={loading}
                     >
                       <Upload className="mr-2 h-4 w-4" />
                       Upload Logo
@@ -238,6 +502,7 @@ const LenderProfilePage = () => {
                       accept="image/*"
                       onChange={handleLogoChange}
                       className="hidden"
+                      disabled={loading}
                     />
                   </div>
                 </div>
@@ -262,6 +527,7 @@ const LenderProfilePage = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => handleRemoveLoanProduct(product.id)}
+                        disabled={loading}
                       >
                         <Minus className="h-4 w-4" />
                       </Button>
@@ -277,6 +543,7 @@ const LenderProfilePage = () => {
                         onChange={(e) => updateLoanProduct(product.id, 'type', e.target.value)}
                         className="w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm mt-1"
                         required
+                        disabled={loading}
                       >
                         <option value="">Select Loan Type</option>
                         {loanTypeOptions.map(type => (
@@ -296,6 +563,7 @@ const LenderProfilePage = () => {
                           onChange={(e) => updateLoanProduct(product.id, 'minInterestRate', e.target.value)}
                           placeholder="e.g. 7.5"
                           required
+                          disabled={loading}
                         />
                       </div>
                       
@@ -309,6 +577,7 @@ const LenderProfilePage = () => {
                           onChange={(e) => updateLoanProduct(product.id, 'maxInterestRate', e.target.value)}
                           placeholder="e.g. 12.5"
                           required
+                          disabled={loading}
                         />
                       </div>
                     </div>
@@ -322,6 +591,7 @@ const LenderProfilePage = () => {
                         onChange={(e) => updateLoanProduct(product.id, 'maxLoanAmount', e.target.value)}
                         placeholder="e.g. 500000"
                         required
+                        disabled={loading}
                       />
                     </div>
                     
@@ -335,6 +605,7 @@ const LenderProfilePage = () => {
                           onChange={(e) => updateLoanProduct(product.id, 'minTenure', e.target.value)}
                           placeholder="e.g. 12"
                           required
+                          disabled={loading}
                         />
                       </div>
                       
@@ -347,6 +618,7 @@ const LenderProfilePage = () => {
                           onChange={(e) => updateLoanProduct(product.id, 'maxTenure', e.target.value)}
                           placeholder="e.g. 60"
                           required
+                          disabled={loading}
                         />
                       </div>
                     </div>
@@ -361,6 +633,7 @@ const LenderProfilePage = () => {
                         onChange={(e) => updateLoanProduct(product.id, 'processingFee', e.target.value)}
                         placeholder="e.g. 1.5"
                         required
+                        disabled={loading}
                       />
                     </div>
                     
@@ -373,6 +646,7 @@ const LenderProfilePage = () => {
                               id={`${document}-${product.id}`}
                               checked={product.requiredDocuments.includes(document)}
                               onCheckedChange={() => toggleDocument(product.id, document)}
+                              disabled={loading}
                             />
                             <Label 
                               htmlFor={`${document}-${product.id}`}
@@ -393,6 +667,7 @@ const LenderProfilePage = () => {
                 variant="outline"
                 className="w-full"
                 onClick={handleAddLoanProduct}
+                disabled={loading}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Another Loan Product
@@ -415,6 +690,7 @@ const LenderProfilePage = () => {
                   onChange={(e) => setMinIncome(e.target.value)}
                   placeholder="e.g. 25000"
                   required
+                  disabled={loading}
                 />
               </div>
               
@@ -427,6 +703,7 @@ const LenderProfilePage = () => {
                         id={`employment-${type}`}
                         checked={employmentTypes.includes(type)}
                         onCheckedChange={() => toggleEmploymentType(type)}
+                        disabled={loading}
                       />
                       <Label 
                         htmlFor={`employment-${type}`}
@@ -448,6 +725,7 @@ const LenderProfilePage = () => {
                   onChange={(e) => setMinCreditScore(e.target.value)}
                   placeholder="e.g. 650"
                   required
+                  disabled={loading}
                 />
               </div>
               
@@ -461,6 +739,7 @@ const LenderProfilePage = () => {
                     onChange={(e) => setMinAge(e.target.value)}
                     placeholder="e.g. 21"
                     required
+                    disabled={loading}
                   />
                 </div>
                 
@@ -473,6 +752,7 @@ const LenderProfilePage = () => {
                     onChange={(e) => setMaxAge(e.target.value)}
                     placeholder="e.g. 65"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -493,6 +773,7 @@ const LenderProfilePage = () => {
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="Enter complete branch address"
                   required
+                  disabled={loading}
                 />
               </div>
               
@@ -505,6 +786,7 @@ const LenderProfilePage = () => {
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="e.g. Mumbai"
                     required
+                    disabled={loading}
                   />
                 </div>
                 
@@ -516,6 +798,7 @@ const LenderProfilePage = () => {
                     onChange={(e) => setState(e.target.value)}
                     placeholder="e.g. Maharashtra"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -529,6 +812,7 @@ const LenderProfilePage = () => {
                     onChange={(e) => setPincode(e.target.value)}
                     placeholder="e.g. 400001"
                     required
+                    disabled={loading}
                   />
                 </div>
                 
@@ -540,6 +824,7 @@ const LenderProfilePage = () => {
                     onChange={(e) => setContactNumber(e.target.value)}
                     placeholder="e.g. +91 9876543210"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -553,6 +838,7 @@ const LenderProfilePage = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="e.g. contact@lender.com"
                   required
+                  disabled={loading}
                 />
               </div>
               
@@ -564,6 +850,7 @@ const LenderProfilePage = () => {
                   onChange={(e) => setWorkingHours(e.target.value)}
                   placeholder="e.g. Mon-Fri: 9AM-6PM, Sat: 10AM-2PM"
                   required
+                  disabled={loading}
                 />
               </div>
               
@@ -575,6 +862,7 @@ const LenderProfilePage = () => {
                     value={latitude}
                     onChange={(e) => setLatitude(e.target.value)}
                     placeholder="e.g. 19.0760"
+                    disabled={loading}
                   />
                 </div>
                 
@@ -582,8 +870,10 @@ const LenderProfilePage = () => {
                   <Label htmlFor="longitude">Longitude</Label>
                   <Input
                     id="longitude"
+                    value={longitude}
                     onChange={(e) => setLongitude(e.target.value)}
                     placeholder="e.g. 72.8777"
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -609,6 +899,7 @@ const LenderProfilePage = () => {
                   value={whatsappNumber}
                   onChange={(e) => setWhatsappNumber(e.target.value)}
                   placeholder="e.g. +91 9876543210"
+                  disabled={loading}
                 />
               </div>
               
@@ -619,6 +910,7 @@ const LenderProfilePage = () => {
                   value={applyNowLink}
                   onChange={(e) => setApplyNowLink(e.target.value)}
                   placeholder="e.g. https://lender.com/apply"
+                  disabled={loading}
                 />
               </div>
               
@@ -629,6 +921,7 @@ const LenderProfilePage = () => {
                   value={googleMapsUrl}
                   onChange={(e) => setGoogleMapsUrl(e.target.value)}
                   placeholder="e.g. https://goo.gl/maps/..."
+                  disabled={loading}
                 />
               </div>
             </CardContent>
@@ -639,10 +932,13 @@ const LenderProfilePage = () => {
               type="button" 
               variant="outline"
               onClick={() => navigate('/admin')}
+              disabled={loading}
             >
               Cancel
             </Button>
-            <Button type="submit">Save Profile</Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Saving...' : 'Save Profile'}
+            </Button>
           </div>
         </form>
       </div>

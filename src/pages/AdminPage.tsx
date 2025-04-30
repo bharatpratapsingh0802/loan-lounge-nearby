@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from "sonner";
 import { Mail, Phone, Eye, EyeOff } from 'lucide-react';
 import Header from '@/components/Header';
@@ -11,21 +11,61 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
 
 const AdminPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState('customer');
-  const [isFirstTimeLender, setIsFirstTimeLender] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  // Check if user is already logged in
+  useEffect(() => {
+    if (user) {
+      checkUserTypeAndRedirect();
+    }
+  }, [user]);
+
+  const checkUserTypeAndRedirect = async () => {
+    try {
+      // Check if the user is a lender
+      if (user?.user_metadata?.user_type === 'lender') {
+        // Check if the lender has completed their profile
+        const { data: lenderProfile, error } = await supabase
+          .from('loanagents')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (error && error.code !== 'PGRST116') {
+          throw error;
+        }
+        
+        if (lenderProfile) {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/admin/lender-profile');
+        }
+      } else {
+        // For customers, redirect to home
+        navigate('/?loggedIn=true');
+      }
+    } catch (error: any) {
+      console.error('Error checking user type:', error.message);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      let { error } = await supabase.auth.signInWithPassword({
+      setLoading(true);
+      let { data, error } = await supabase.auth.signInWithPassword({
         email: email,
         password: password
       });
@@ -34,17 +74,33 @@ const AdminPage = () => {
 
       toast.success(`Logged in successfully`);
       
-      if (userType === 'customer') {
+      const userMetadata = data?.user?.user_metadata;
+      const loggedInType = userMetadata?.user_type || 'customer';
+      
+      if (loggedInType === 'customer') {
         navigate('/?loggedIn=true');
       } else {
-        if (isFirstTimeLender) {
-          navigate('/admin/lender-profile');
-        } else {
+        // Check if the lender has completed their profile
+        const { data: lenderProfile, error: lenderError } = await supabase
+          .from('loanagents')
+          .select('id')
+          .eq('user_id', data?.user?.id)
+          .maybeSingle();
+        
+        if (lenderError && lenderError.code !== 'PGRST116') {
+          throw lenderError;
+        }
+        
+        if (lenderProfile) {
           navigate('/admin/dashboard');
+        } else {
+          navigate('/admin/lender-profile');
         }
       }
     } catch (error: any) {
       toast.error(error.message || "An error occurred during login");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -89,6 +145,7 @@ const AdminPage = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      disabled={loading}
                     />
                   </div>
                 </TabsContent>
@@ -103,6 +160,7 @@ const AdminPage = () => {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       required
+                      disabled={loading}
                     />
                   </div>
                 </TabsContent>
@@ -120,11 +178,13 @@ const AdminPage = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       className="pr-10"
+                      disabled={loading}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                      disabled={loading}
                     >
                       {showPassword ? (
                         <EyeOff className="h-5 w-5" />
@@ -140,6 +200,7 @@ const AdminPage = () => {
                   value={userType} 
                   onValueChange={setUserType} 
                   className="flex space-x-4"
+                  disabled={loading}
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="lender" id="lender" />
@@ -153,8 +214,8 @@ const AdminPage = () => {
                 </RadioGroup>
               </div>
               
-              <Button type="submit" className="w-full">
-                Login
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Logging in...' : 'Login'}
               </Button>
             </form>
           </CardContent>
@@ -166,6 +227,7 @@ const AdminPage = () => {
                 variant="link"
                 className="p-0 h-auto font-semibold"
                 onClick={() => navigate("/signup")}
+                disabled={loading}
               >
                 Sign up
               </Button>
