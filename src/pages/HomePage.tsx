@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogIn, ChevronRight, MapPin, Star, LogOut, UserPlus } from 'lucide-react';
@@ -12,18 +11,38 @@ import { lenders } from '@/data/lenders';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
+import LocationSearch from "@/components/LocationSearch";
 
 const HomePage = () => {
   const navigate = useNavigate();
   const [selectedLoanType, setSelectedLoanType] = React.useState<string | null>(null);
+  const [selectedState, setSelectedState] = React.useState<string | null>(null);
+  const [selectedCity, setSelectedCity] = React.useState<string | null>(null);
   const isMobile = useIsMobile();
 
   // Use AuthContext for auth status and logout
   const { user, signOut } = useAuth();
 
-  const filteredLenders = lenders.filter(
-    lender => selectedLoanType === null || lender.loanTypes.includes(selectedLoanType)
-  );
+  // Extract unique states and cities from lenders data
+  const stateOptions = React.useMemo(() => {
+    const statesSet = new Set<string>();
+    lenders.forEach((l) => l.state && statesSet.add(l.state));
+    return Array.from(statesSet).sort().map(s => ({ value: s, label: s }));
+  }, []);
+
+  const cityOptions = React.useMemo(() => {
+    const citiesSet = new Set<string>();
+    lenders
+      .filter(l => !selectedState || l.state === selectedState)
+      .forEach((l) => l.city && citiesSet.add(l.city));
+    return Array.from(citiesSet).sort().map(c => ({ value: c, label: c }));
+  }, [selectedState]);
+
+  // Main filtering: location (state/city) first, then loan type
+  const filteredLenders = lenders
+    .filter(l => !selectedState || l.state === selectedState)
+    .filter(l => !selectedCity || l.city === selectedCity)
+    .filter(lender => selectedLoanType === null || lender.loanTypes.includes(selectedLoanType));
 
   const handleLenderClick = (e: React.MouseEvent, lenderId: string) => {
     e.preventDefault();
@@ -98,6 +117,21 @@ const HomePage = () => {
       </section>
 
       <div className="flex-1 px-4 pb-20">
+
+        {/* --- Location Search Section --- */}
+        <section className="max-w-2xl mx-auto rounded-xl shadow-md bg-white/80 p-3 md:p-4 mt-4">
+          <LocationSearch
+            states={stateOptions}
+            cities={cityOptions}
+            selectedState={selectedState}
+            selectedCity={selectedCity}
+            onStateChange={state => {
+              setSelectedState(state);
+              setSelectedCity(null); // reset city when state changes
+            }}
+            onCityChange={city => setSelectedCity(city)}
+          />
+        </section>
 
         {/* Loan chips with subtle shadow for elevated design */}
         <section className="mb-8 -mt-4">
