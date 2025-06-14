@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { LogIn, ChevronRight, MapPin, Star, LogOut, UserPlus } from 'lucide-react';
 import { toast } from "sonner";
 import Header from '@/components/Header';
@@ -11,25 +11,15 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { lenders } from '@/data/lenders';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/contexts/AuthContext';
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [selectedLoanType, setSelectedLoanType] = useState<string | null>(null);
+  const [selectedLoanType, setSelectedLoanType] = React.useState<string | null>(null);
   const isMobile = useIsMobile();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Check if user is logged in
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const loginStatusFromURL = params.get('loggedIn') === 'true';
-    const loginStatusFromStorage = localStorage.getItem('isLoggedIn') === 'true';
-    
-    if (loginStatusFromURL || loginStatusFromStorage) {
-      setIsLoggedIn(true);
-      localStorage.setItem('isLoggedIn', 'true');
-    }
-  }, [location]);
+  // Use AuthContext for auth status and logout
+  const { user, signOut } = useAuth();
 
   const filteredLenders = lenders.filter(
     lender => selectedLoanType === null || lender.loanTypes.includes(selectedLoanType)
@@ -37,7 +27,7 @@ const HomePage = () => {
 
   const handleLenderClick = (e: React.MouseEvent, lenderId: string) => {
     e.preventDefault();
-    if (!isLoggedIn) {
+    if (!user) {
       toast.info("Please login first to view lender details");
       navigate('/admin');
     } else {
@@ -45,17 +35,16 @@ const HomePage = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    setIsLoggedIn(false);
-    toast.success("Logged out successfully");
+  const handleLogout = async () => {
+    await signOut();
+    // Redirect handled by auth context
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-white">
       <Header showSearch className="mb-0">
         <div className="ml-auto flex gap-2">
-          {!isLoggedIn ? (
+          {!user ? (
             <>
               <Button asChild variant="outline" size="sm">
                 <Link to="/admin">
@@ -234,3 +223,5 @@ const HomePage = () => {
 };
 
 export default HomePage;
+
+// NOTE: This file is now long (>200 lines). Please consider refactoring it into smaller components!
